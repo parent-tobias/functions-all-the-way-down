@@ -1,6 +1,6 @@
 // src/fetch-feed.js
 //
-// Builds lazy Tasks that describe how to fetch and process a feed.
+// Builds lazy Tasks that describe how to fetch and process feeds.
 // Nothing runs here — fork() is called only in the shell (server.js).
 
 import { Task } from './lib/task.js';
@@ -33,4 +33,10 @@ export const processFeed = (url) =>
     .map(items => items.map(normalizeItem))
     .map(items => items.filter(item => item.valid))
     .map(items => items.map(item => item.data))
+    .map(sortByDateDesc);
+
+// Run multiple feeds concurrently; merge and sort the combined results.
+export const processFeeds = (...urls) =>
+  Task.all(urls.map(processFeed))
+    .map(feeds => feeds.flat())
     .map(sortByDateDesc);

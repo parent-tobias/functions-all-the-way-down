@@ -2,9 +2,6 @@
 //
 // Task represents a computation that will produce a value in the future.
 // Unlike Promise, Task is LAZY — nothing runs until you call .fork().
-//
-// The computation function: (reject, resolve) => void
-// reject comes first — error handling is first-class.
 
 export const Task = fork => ({
   fork,
@@ -27,10 +24,25 @@ export const Task = fork => ({
   }),
 });
 
-// Task.of — wrap a plain value in a Task (always resolves)
-Task.of = x => Task((reject, resolve) => resolve(x));
-
-// Task.rejected — wrap a plain value in a Task (always rejects)
+Task.of       = x => Task((reject, resolve) => resolve(x));
 Task.rejected = x => Task((reject, resolve) => reject(x));
+
+// Task.all — run tasks concurrently, collect results in order.
+// Fail-fast: any rejection immediately rejects the outer Task.
+Task.all = tasks => Task((reject, resolve) => {
+  const results  = new Array(tasks.length);
+  let   completed = 0;
+
+  tasks.forEach((task, index) => {
+    task.fork(
+      reject,
+      value => {
+        results[index] = value;  // preserve input order
+        completed += 1;
+        if (completed === tasks.length) resolve(results);
+      }
+    );
+  });
+});
 
 export default Task;
