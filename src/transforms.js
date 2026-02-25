@@ -2,9 +2,9 @@
 //
 // Pure functions for transforming feed data.
 
-import { Either } from './lib/either.js';
-import { Maybe }  from './lib/maybe.js';
-import { pluck, firstOf } from './lib/fp-utils.js';
+import { Either }              from './lib/either.js';
+import { Maybe }               from './lib/maybe.js';
+import { pluck, firstOf, anyPass } from './lib/fp-utils.js';
 
 // Extractors
 export const getTitles = pluck('title');
@@ -27,6 +27,15 @@ export const filterByCategory = (category) => (items) =>
     const categories = firstOf('categories', 'tags')(item) || [];
     return categories.includes(category);
   });
+
+const matchesSearch = keyword => item =>
+  anyPass(
+    i => i.title.toLowerCase().includes(keyword.toLowerCase()),
+    i => (i.summary || '').toLowerCase().includes(keyword.toLowerCase())
+  )(item);
+
+export const filterBySearch = (keyword) => (items) =>
+  items.filter(matchesSearch(keyword));
 
 // Sorter
 export const sortByDateDesc = (items) =>

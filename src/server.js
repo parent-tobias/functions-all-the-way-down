@@ -3,8 +3,6 @@
 // This file is intentionally "impure" — it's where side effects live.
 // Its only job: translate HTTP requests into pipeline calls,
 // and pipeline results into HTTP responses.
-//
-// The functional core never changes. Only this shell knows about HTTP.
 
 import http from 'node:http';
 import { processFeed, processFeeds } from './fetch-feed.js';
@@ -21,11 +19,13 @@ const sendError = (res, status, message) =>
 // Route: GET /feed?url=<feed_url>[&category=...][&search=...]
 const handleFeedRequest = (req, res) => {
   const { searchParams } = new URL(req.url, `http://localhost:${PORT}`);
-  const url = searchParams.get('url');
+  const url      = searchParams.get('url');
+  const category = searchParams.get('category');
+  const search   = searchParams.get('search');
 
   if (!url) return sendError(res, 400, 'Missing url parameter');
 
-  processFeed(url)
+  processFeed(url, { category, search })
     .fork(
       err   => sendError(res, 500, `Error processing feed: ${err.message}`),
       items => sendJSON(res, 200, items)

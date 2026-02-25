@@ -4,7 +4,8 @@
 // Nothing runs here — fork() is called only in the shell (server.js).
 
 import { Task } from './lib/task.js';
-import { normalizeItem, sortByDateDesc } from './transforms.js';
+import { when } from './lib/fp-utils.js';
+import { normalizeItem, sortByDateDesc, filterByCategory, filterBySearch } from './transforms.js';
 import Parser from 'rss-parser';
 
 const parser = new Parser();
@@ -26,16 +27,17 @@ const parseFeed = raw => Task((reject, resolve) =>
     .catch(reject)
 );
 
-export const processFeed = (url) =>
+export const processFeed = (url, { category, search } = {}) =>
   fetchFeed(url)
     .chain(parseFeed)
     .map(feed => feed.items)
     .map(items => items.map(normalizeItem))
     .map(items => items.filter(item => item.valid))
     .map(items => items.map(item => item.data))
+    .map(when(category, filterByCategory(category)))
+    .map(when(search,   filterBySearch(search)))
     .map(sortByDateDesc);
 
-// Run multiple feeds concurrently; merge and sort the combined results.
 export const processFeeds = (...urls) =>
   Task.all(urls.map(processFeed))
     .map(feeds => feeds.flat())

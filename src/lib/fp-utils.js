@@ -21,5 +21,13 @@ export const firstOf = (...keys) => (obj) =>
   keys.map(k => obj[k]).find(v => v != null);
 
 // The identity function — returns its argument unchanged.
-// Useful as a default/no-op in higher-order contexts.
 export const identity = x => x;
+
+// Return fn if condition is truthy, or identity if not.
+// Enables conditional pipeline steps without breaking the pipe.
+export const when = (condition, fn) =>
+  condition ? fn : identity;
+
+// Combine predicates with OR: passes if any predicate passes.
+export const anyPass = (...predicates) =>
+  value => predicates.some(pred => pred(value));
