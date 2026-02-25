@@ -1,41 +1,71 @@
 // src/transforms.js
 //
 // Pure functions for transforming feed data.
-//
-// Rule 1: Every function here is PURE
-//   - Same input → same output, always
-//   - No side effects (no logging, no mutation, no network)
 
+import { Either } from './lib/either.js';
+import { Maybe }  from './lib/maybe.js';
 import { pluck, firstOf } from './lib/fp-utils.js';
 
-// Extract titles and links using the pluck utility
+// Extractors
 export const getTitles = pluck('title');
 export const getLinks  = pluck('link');
 
-// Filter items that contain a keyword in their title
-// Shape: config => data => result (curried)
+// Filters (curried: config => data => result)
 export const filterByTitle = (searchTerm) => (items) =>
   items.filter(item =>
     item.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-// Filter items that contain a keyword in their summary/description
 export const filterBySummary = (keyword) => (items) =>
   items.filter(item => {
     const summary = firstOf('description', 'content')(item) || '';
     return summary.toLowerCase().includes(keyword.toLowerCase());
   });
 
-// Filter items by category (handles both 'categories' and 'tags' field names)
 export const filterByCategory = (category) => (items) =>
   items.filter(item => {
     const categories = firstOf('categories', 'tags')(item) || [];
     return categories.includes(category);
   });
 
-// Sort items by date (newest first)
-// Note: [...items] copies the array to avoid mutating the original
+// Sorter
 export const sortByDateDesc = (items) =>
   [...items].sort((a, b) =>
     new Date(b.pubDate) - new Date(a.pubDate)
   );
+
+// Shape converters
+export const toHeadline  = item => ({ title: item.title, link: item.link, date: item.pubDate });
+export const toHeadlines = items => items.map(toHeadline);
+
+// Normalisation
+const authorToString = author =>
+  typeof author === 'string' ? author : author?.name;
+
+const getAuthorName = obj =>
+  Maybe.of(firstOf('author', 'dc:creator')(obj))
+    .map(authorToString)
+    .getOrElse('Unknown Author');
+
+export const normalizeItem = item =>
+  Either.fromNullable(item, 'Item was null')
+    .chain(i =>
+      Either.fromNullable(i.title, 'Title was null')
+        .map(title => ({ ...i, title }))
+    )
+    .chain(i =>
+      Either.fromNullable(i.link, 'Link was null')
+        .map(link => ({ ...i, link }))
+    )
+    .map(i => ({
+      title:      i.title,
+      link:       i.link,
+      summary:    firstOf('description', 'content')(i) || 'No description available',
+      author:     getAuthorName(i),
+      categories: firstOf('categories', 'tags')(i) || [],
+      pubDate:    i.pubDate,
+    }))
+    .fold(
+      err  => ({ valid: false, error: err }),
+      data => ({ valid: true,  data })
+    );
