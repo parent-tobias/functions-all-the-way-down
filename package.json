@@ -5,11 +5,15 @@
   "type": "module",
   "main": "src/index.js",
   "scripts": {
-    "start": "node src/index.js"
+    "start": "node src/index.js",
+    "server": "node --watch src/server.js"
   },
   "keywords": [
     "functional-programming",
     "node"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "rss-parser": "^3.13.0"
+  }
 }
