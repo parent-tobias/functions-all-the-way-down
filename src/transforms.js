@@ -5,27 +5,33 @@
 // Rule 1: Every function here is PURE
 //   - Same input → same output, always
 //   - No side effects (no logging, no mutation, no network)
-//
-// Rule 2: Functions do ONE thing
-//   - Small, focused, composable
-//
-// Rule 3: Data in, data out
-//   - We transform, we don't "do things"
 
-// Extract just the titles from a list of items
-export const getTitles = (items) =>
-  items.map(item => item.title);
+import { pluck, firstOf } from './lib/fp-utils.js';
 
-// Extract just the links from a list of items
-export const getLinks = (items) =>
-  items.map(item => item.link);
+// Extract titles and links using the pluck utility
+export const getTitles = pluck('title');
+export const getLinks  = pluck('link');
 
 // Filter items that contain a keyword in their title
-// Shape: config => data => result (curried for composability)
+// Shape: config => data => result (curried)
 export const filterByTitle = (searchTerm) => (items) =>
   items.filter(item =>
     item.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+// Filter items that contain a keyword in their summary/description
+export const filterBySummary = (keyword) => (items) =>
+  items.filter(item => {
+    const summary = firstOf('description', 'content')(item) || '';
+    return summary.toLowerCase().includes(keyword.toLowerCase());
+  });
+
+// Filter items by category (handles both 'categories' and 'tags' field names)
+export const filterByCategory = (category) => (items) =>
+  items.filter(item => {
+    const categories = firstOf('categories', 'tags')(item) || [];
+    return categories.includes(category);
+  });
 
 // Sort items by date (newest first)
 // Note: [...items] copies the array to avoid mutating the original
