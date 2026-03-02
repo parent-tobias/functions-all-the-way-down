@@ -5,7 +5,9 @@
 // and pipeline results into HTTP responses.
 
 import http from 'node:http';
-import { processFeed, processFeeds } from './fetch-feed.js';
+import { Either } from './lib/either.js';
+import { Task }   from './lib/task.js';
+import { processFeed, processFeeds, processFeedForDigest } from './fetch-feed.js';
 
 const PORT = 3000;
 
@@ -46,11 +48,26 @@ const handleMultipleFeedsRequest = (req, res) => {
     );
 };
 
+// Route: GET /digest?url=<feed_url>
+const handleDigestRequest = (req, res) => {
+  const { searchParams } = new URL(req.url, `http://localhost:${PORT}`);
+  const url = searchParams.get('url');
+
+  Either.fromNullable(url, 'Missing url parameter')
+    .fold(Task.rejected, Task.of)
+    .chain(processFeedForDigest)
+    .fork(
+      err    => sendError(res, 500, err),
+      digest => sendJSON(res, 200, digest)
+    );
+};
+
 const server = http.createServer((req, res) => {
   const { pathname } = new URL(req.url, `http://localhost:${PORT}`);
 
   if (req.method === 'GET' && pathname === '/feed')  return handleFeedRequest(req, res);
-  if (req.method === 'GET' && pathname === '/feeds') return handleMultipleFeedsRequest(req, res);
+  if (req.method === 'GET' && pathname === '/feeds')  return handleMultipleFeedsRequest(req, res);
+  if (req.method === 'GET' && pathname === '/digest') return handleDigestRequest(req, res);
 
   sendError(res, 404, 'Not found');
 });
