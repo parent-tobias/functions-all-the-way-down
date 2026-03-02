@@ -60,6 +60,8 @@ export const Maybe = {
 };
 ```
 
+Notice something about `Just`: the value `x` isn't stored as a property on the returned object. There's no `maybe.value`, no `maybe._x`. The only way to reach `x` is through the methods — `map`, `chain`, `getOrElse` — all of which close over it. This is the same closure mechanism from chapter two, now applied to a data structure. Where currying used closures to freeze configuration into a function, `Just` uses them to seal a value inside a container. The container controls all access to what it holds.
+
 The key is in the symmetry. Both `Just` and `Nothing` have `map`, `chain`, `filter`, and `getOrElse`. Code that calls `.map()` on a Maybe doesn't need to know whether it has a value — it just calls `.map()`. If it's a `Just`, the function runs and a new `Just` comes out. If it's `Nothing`, the function is skipped and `Nothing` comes out. The absence propagates automatically.
 
 ## Walking Through It

@@ -263,6 +263,24 @@ truth about the code.
 
 ---
 
+## Part Six: Applying the Patterns
+
+### Chapter 14: Putting It Together — Building the /digest Feature
+
+A new endpoint as a practical review of the full stack. The `/digest` endpoint returns a summary of a feed: item count, date range, top categories, and recent headlines. Building it surfaces three concrete design decisions: where route-specific transforms live (route-named files, not the shared library), which type to use when a value is simply absent (`Maybe`, not `Either`), and how currying turns a parameterised function into a reusable, configurable tool. The pure core is written test-first and fully exercised before any async work is touched.
+
+**Key concepts:** route-oriented file structure, Maybe vs Either (absence vs failure), curried configuration, `topCategories`, TDD on the pure core.
+
+---
+
+### Chapter 15: Composing Types — The Either → Task Bridge
+
+The async layer for the `/digest` feature, and the pattern that connects synchronous validation to asynchronous computation. `Either.fromNullable` validates the request; `.fold(Task.rejected, Task.of)` converts the result into a Task; `.chain(processFeedForDigest)` sequences the async work. The whole handler becomes a single expression. The chapter examines why the parameter order of `fromNullable` and `fold` looks asymmetric (entry vs exit mental models), the one honest cost of the bridge (HTTP status codes collapse into a single error handler), and how a `mapError` method on Task could recover the distinction without breaking the pipeline style.
+
+**Key concepts:** Either → Task bridge, `fold` as type conversion, `Task.of` / `Task.rejected` as constructors, `mapError`, error shape consistency.
+
+---
+
 ## Appendix: Where to Go Next
 
 - **Ramda**: Compare the utilities you built by hand against a production FP library

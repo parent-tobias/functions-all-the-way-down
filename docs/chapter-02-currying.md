@@ -32,6 +32,8 @@ These two calls can be separated in time and space. You might configure `findNod
 
 This is fundamentally different from how most imperative code handles configuration. You either call a function with all its arguments at once, or you stash configuration in a shared variable somewhere. Partial application gives you a third option: freeze the configuration *into* a function and carry that function around.
 
+What makes this work mechanically is the **closure**. When `filterByTitle('node')` executes, `searchTerm` is captured by the inner function — it remains accessible even after `filterByTitle` has returned. The configuration isn't stashed in an external variable; it lives inside the returned function itself, invisible to the outside world. Closures are not an edge case of JavaScript — they're the mechanism behind partial application, and they'll keep appearing throughout this series in increasingly useful shapes.
+
 ## Building More Curried Transforms
 
 With that distinction in mind, let's look at what else our transforms module would benefit from.

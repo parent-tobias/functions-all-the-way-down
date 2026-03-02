@@ -6,6 +6,7 @@
 import { Task } from './lib/task.js';
 import { when } from './lib/fp-utils.js';
 import { normalizeItem, sortByDateDesc, filterByCategory, filterBySearch } from './transforms.js';
+import { buildDigest } from './digest.js';
 import Parser from 'rss-parser';
 
 const parser = new Parser();
@@ -37,6 +38,17 @@ export const processFeed = (url, { category, search } = {}) =>
     .map(when(category, filterByCategory(category)))
     .map(when(search,   filterBySearch(search)))
     .map(sortByDateDesc);
+
+export const processFeedForDigest = (url) =>
+  fetchFeed(url)
+    .chain(parseFeed)
+    .map(rawFeed => {
+      const items = rawFeed.items
+        .map(normalizeItem)
+        .filter(r => r.valid)
+        .map(r => r.data);
+      return buildDigest(rawFeed, sortByDateDesc(items));
+    });
 
 export const processFeeds = (...urls) =>
   Task.all(urls.map(processFeed))
