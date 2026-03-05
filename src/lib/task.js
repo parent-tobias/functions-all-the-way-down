@@ -10,6 +10,10 @@ export const Task = fork => ({
     fork(reject, x => resolve(fn(x)));
   }),
 
+  mapError: fn => Task((reject, resolve) => {
+    fork(err=>reject(fn(err)), resolve);
+  }),
+
   chain: fn => Task((reject, resolve) => {
     fork(reject, x => {
       fn(x).fork(reject, resolve);

@@ -25,11 +25,12 @@ const handleFeedRequest = (req, res) => {
   const category = searchParams.get('category');
   const search   = searchParams.get('search');
 
-  if (!url) return sendError(res, 400, 'Missing url parameter');
-
-  processFeed(url, { category, search })
+  Either.fromNullable(url, {status:400, message: 'Missing url parameter'})
+    .fold(Task.rejected, Task.of)
+    .chain(url => processFeed(url, { category, search }))
+    .mapError(err => ({ status: 500, message: `Error processing feed: ${err.message}` }))
     .fork(
-      err   => sendError(res, 500, `Error processing feed: ${err.message}`),
+      err   => sendError(res, err.status, err.message),
       items => sendJSON(res, 200, items)
     );
 };
@@ -39,11 +40,13 @@ const handleMultipleFeedsRequest = (req, res) => {
   const { searchParams } = new URL(req.url, `http://localhost:${PORT}`);
   const urls = searchParams.getAll('url');
 
-  if (!urls || !urls.length) return sendError(res, 400, 'Missing url parameter');
-
-  processFeeds(...urls.map(url => url.trim()))
+  Either.of(urls)
+    .filter(urls => urls.length > 0, {status:400, message: 'Missing url parameter'})
+    .fold(Task.rejected, Task.of)
+    .chain(urls => processFeeds(...urls.map(url => url.trim())))
+    .mapError(err => ({ status: 500, message: `Error processing feeds: ${err.message}` }))
     .fork(
-      err   => sendError(res, 500, `Error processing feed: ${err.message}`),
+      err   => sendError(res, err.status, err.message),
       items => sendJSON(res, 200, items)
     );
 };
@@ -53,11 +56,12 @@ const handleDigestRequest = (req, res) => {
   const { searchParams } = new URL(req.url, `http://localhost:${PORT}`);
   const url = searchParams.get('url');
 
-  Either.fromNullable(url, 'Missing url parameter')
+  Either.fromNullable(url, {status:400, message: 'Missing url parameter'})
     .fold(Task.rejected, Task.of)
     .chain(processFeedForDigest)
+    .mapError(err => ({ status: 500, message: `Error processing feed for digest: ${err.message}` }))
     .fork(
-      err    => sendError(res, 500, err),
+      err    => sendError(res, err.status, err.message),
       digest => sendJSON(res, 200, digest)
     );
 };

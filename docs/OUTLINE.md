@@ -281,6 +281,14 @@ The async layer for the `/digest` feature, and the pattern that connects synchro
 
 ---
 
+### Chapter 16: Completing Task — `mapError` and Consistent Error Shapes
+
+Closes the gap named in chapter 15. `mapError` is the missing symmetric counterpart to `map`: it transforms the rejection value without terminating the Task, while passing the resolved value through unchanged. With it, every error path can be normalised to a consistent `{ status, message }` shape before reaching `fork`, recovering the 400/500 HTTP status distinction that the Either → Task bridge had collapsed. The chapter also examines the difference between `Either.of` and `Either.fromNullable` in practice, and makes the deliberate case for why there is no `server.test.js`.
+
+**Key concepts:** `mapError`, error shape consistency, `Either.of` vs `Either.fromNullable`, `filter` for condition-based validation, why the shell has no unit tests.
+
+---
+
 ## Appendix: Where to Go Next
 
 - **Ramda**: Compare the utilities you built by hand against a production FP library
