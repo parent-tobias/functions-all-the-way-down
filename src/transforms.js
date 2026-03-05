@@ -4,6 +4,7 @@
 
 import { Either }              from './lib/either.js';
 import { Maybe }               from './lib/maybe.js';
+import { Validation, Success, Failure } from './lib/validation.js';
 import { pluck, firstOf, anyPass } from './lib/fp-utils.js';
 
 // Extractors
@@ -36,6 +37,13 @@ const matchesSearch = keyword => item =>
 
 export const filterBySearch = (keyword) => (items) =>
   items.filter(matchesSearch(keyword));
+
+// validators
+export const validateHasTitle = title =>
+  title ? Success(title) : Failure(['Missing title']);
+
+export const validateHasLink = link =>
+  link ? Success(link) : Failure(['Missing link']);
 
 // Sorter
 export const sortByDateDesc = (items) =>
@@ -77,4 +85,13 @@ export const normalizeItem = item =>
     .fold(
       err  => ({ valid: false, error: err }),
       data => ({ valid: true,  data })
+    );
+
+export const validateItem = item =>
+  Validation.of(title => link => item)
+    .ap(validateHasTitle(item.title))
+    .ap(validateHasLink(item.link))
+    .fold(
+      errors => ({ valid:false, errors }),
+      item => ({ valid: true, data: item })
     );

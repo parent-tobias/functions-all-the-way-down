@@ -289,6 +289,14 @@ Closes the gap named in chapter 15. `mapError` is the missing symmetric counterp
 
 ---
 
+### Chapter 17: Collecting Failures — The Validation Type
+
+Where Either short-circuits on the first failure, Validation accumulates all of them. The chapter introduces `Success` and `Failure` as Either-like variants with one key structural difference: errors are always arrays, and `ap` concatenates them instead of stopping. The central focus is the `ap` composition pattern — specifically, why the chain must start with a curried function in a `Success` rather than a data value, and how each `.ap()` call partially applies that function one argument further. `validateItem` is built alongside `normalizeItem` to make the contrast concrete: same inputs, same output shape, different behaviour. The fold-at-the-boundary principle applies here as it does everywhere else.
+
+**Key concepts:** Validation/Success/Failure, `ap` (applicative apply), error accumulation, curried constructor pattern, Applicative vs Functor, when to use Validation vs Either.
+
+---
+
 ## Appendix: Where to Go Next
 
 - **Ramda**: Compare the utilities you built by hand against a production FP library
