@@ -297,6 +297,14 @@ Where Either short-circuits on the first failure, Validation accumulates all of 
 
 ---
 
+### Chapter 18: Taming Sync Side Effects — The IO Type
+
+The same describe-first, execute-at-boundary principle that Task applies to async operations, applied to synchronous side effects. IO wraps a sync computation in a lazy function, making the wrapper referentially transparent even when the effect inside isn't. The chapter builds IO from scratch — simpler than Task: one variant, no error channel, just `map`, `chain`, and `.run()` — and applies it to `server.js`: reading the port from the environment and composing startup log messages. The `logger` pattern (a function returning an IO) mirrors the Task factory pattern exactly. The chapter closes by examining what `.run()` at module level actually buys you compared to a plain constant, and what the consistent shape of every type in the series suggests.
+
+**Key concepts:** IO, lazy sync effects, `map`/`chain`/`run`, logger as IO factory, the boundary principle applied to sync code, IO vs Task.
+
+---
+
 ## Appendix: Where to Go Next
 
 - **Ramda**: Compare the utilities you built by hand against a production FP library

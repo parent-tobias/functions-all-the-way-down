@@ -7,9 +7,11 @@
 import http from 'node:http';
 import { Either } from './lib/either.js';
 import { Task }   from './lib/task.js';
+import { IO } from './lib/io.js';
 import { processFeed, processFeeds, processFeedForDigest } from './fetch-feed.js';
 
-const PORT = 3000;
+const getPort = IO(() => process.env.API_PORT || 3000);
+const logger = message => IO(() => console.log(message));
 
 const sendJSON  = (res, status, data)    => {
   res.writeHead(status, { 'Content-Type': 'application/json' });
@@ -76,7 +78,10 @@ const server = http.createServer((req, res) => {
   sendError(res, 404, 'Not found');
 });
 
+const PORT = getPort.run();
+
 server.listen(PORT, () => {
-  console.log(`Feed aggregator running at http://localhost:${PORT}`);
-  console.log(`Try: http://localhost:${PORT}/feed?url=https://feeds.npr.org/1001/rss.xml`);
+  logger(`Feed aggregator running at http://localhost:${PORT}`)
+    .chain(() => logger(`Try: http://localhost:${PORT}/feed?url=https://feeds.npr.org/1001/rss.xml`))
+    .run();
 });
