@@ -305,6 +305,14 @@ The same describe-first, execute-at-boundary principle that Task applies to asyn
 
 ---
 
+### Chapter 19: What You've Actually Built
+
+The closing chapter. No new code — a reckoning with what the series has produced. The arc is traced chapter by chapter in a paragraph each: pure functions → composition → absence → failure → async → architecture → testing → applied features → error symmetry → accumulation → sync effects. The underlying pattern is named: every type in the series is a container with `map`, `chain`, and an escape hatch. The Fantasy Land specification is introduced as the formal name for what the reader has been building all along, with a mapping from series types to Fantasy Land algebras. The chapter closes with the portability argument — nothing in the functional core is Node-specific — and opens the door to the next series: Fantasy Land formally, production libraries, Traversable and Monoid and Bifunctor, property-based testing of algebraic laws.
+
+**Key concepts:** series recap, the container pattern, Fantasy Land specification, algebraic laws, portability of FP patterns, what comes next.
+
+---
+
 ## Appendix: Where to Go Next
 
 - **Ramda**: Compare the utilities you built by hand against a production FP library
