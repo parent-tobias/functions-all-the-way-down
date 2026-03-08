@@ -148,6 +148,20 @@ console.log(getLatestNodeTitles(sampleItems));
 
 Run it with `node src/index.js`. The output is sorted newest-first because `sortByDateDesc` ran before `getTitles`. Swap their positions in the `pipe` call and you'd get an error, because `getTitles` returns strings, not objects with `pubDate`. The function shapes enforce a natural order.
 
+## The Assumption Inside `pipe`
+
+`pipe` works beautifully here because every function in the pipeline accepts an array and returns an array. The shapes match. Data flows cleanly.
+
+But `pipe` makes a silent assumption: that every step succeeds. If `filterByTitle` received `null` instead of an array, it would throw. If an item was missing a `title` field, it would crash on `.toLowerCase()`. `pipe` has no concept of "this step might not work" — it just calls the next function with whatever the previous one returned, regardless of whether that value is meaningful.
+
+For a pipeline of pure transforms over clean, predictable data, that's fine. But real data isn't always clean. Feed items sometimes have no author, no description, sometimes no title. Network requests fail. Values are absent. The moment you need to handle any of that, `pipe` alone doesn't have the tools.
+
+The solution isn't to add `if` statements inside every function — that would scatter the checking throughout the pipeline and undermine the composability you just built. It's to change what flows *through* the pipe.
+
+Instead of passing a plain value from step to step, you pass a *container* that knows whether it holds a value or not. The functions don't change — they still describe transformations. But the container handles the absent case automatically, skipping steps that would have no meaningful input and carrying the absence forward to the end.
+
+That's where the series goes from here. The next several chapters build those containers — each one designed for a different kind of uncertainty. `pipe` doesn't go away; it dissolves into the containers themselves, as `map` and `chain`. You're still composing functions in sequence. The pipeline just gets smarter about what it carries.
+
 ## A Few Things to Sit With
 
 Before we move on to chapter four:
