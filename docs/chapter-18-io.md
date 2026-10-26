@@ -136,7 +136,7 @@ IO doesn't have an error channel. If the wrapped function throws, the exception 
 
 ## A Few Things to Sit With
 
-Before the final chapter:
+Before we go on to make the application remember, take stock of a few things:
 
 - `getPort.run()` is called at module-level in `server.js` — which means it runs when the file is first imported. Is that meaningfully different from `const PORT = process.env.API_PORT || 3000`? What does IO add here beyond naming the intent?
 - `logger` is a function that returns an IO. That's the same shape as a Task factory — `processFeed` is a function that returns a Task. What does it mean that these patterns look identical at the boundary between named intent and execution?

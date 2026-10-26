@@ -305,9 +305,35 @@ The same describe-first, execute-at-boundary principle that Task applies to asyn
 
 ---
 
-### Chapter 19: What You've Actually Built
+## Part Seven: The Whole App
 
-The closing chapter. No new code — a reckoning with what the series has produced. The arc is traced chapter by chapter in a paragraph each: pure functions → composition → absence → failure → async → architecture → testing → applied features → error symmetry → accumulation → sync effects. The underlying pattern is named: every type in the series is a container with `map`, `chain`, and an escape hatch. The Fantasy Land specification is introduced as the formal name for what the reader has been building all along, with a mapping from series types to Fantasy Land algebras. The chapter closes with the portability argument — nothing in the functional core is Node-specific — and opens the door to the next series: Fantasy Land formally, production libraries, Traversable and Monoid and Bifunctor, property-based testing of algebraic laws.
+### Chapter 19: Persistence — The App Remembers
+
+Restart the server and everything it knew is gone — an app that forgets isn't an app, it's a demo. The chapter adds saved feeds over Node's built-in `node:sqlite`: a `store.js` in the shell exposing functions that return Tasks, migrations as an ordered list run at startup, and the series' first write endpoint, `POST /feeds`, validated with the Validation type so every problem with a request body is reported at once. The generalising recognition: a database row is just untrusted input wearing a different coat, so the Either discipline of `normalizeItem` applies to rows unchanged. The honest limitation: transactions — the shell owns atomicity, the core owns shape.
+
+**Key concepts:** persistence, repository functions returning Task, migrations, write endpoints, Validation for request bodies, rows as untrusted input.
+
+---
+
+### Chapter 20: Reader — Dependencies as an Argument
+
+Where do the database path, the port and the logger level actually live? Scattered `process.env` reads and hard-wired imports make dependencies invisible — and invisible dependencies are just globals with better PR. Reader is built from scratch (`env => a`, `map`, `chain`, `runReader`), then ReaderTask as the composition of two types the reader already owns. Configuration is parsed once at startup with Validation accumulating every error — fail fast, all failures. The environment holds capabilities (config, store, logger), never request data, and handlers become testable by swapping the env instead of mocking modules.
+
+**Key concepts:** Reader, ReaderTask, `runReader`, dependency injection as an argument, validated configuration, capabilities not data, env-swap testing.
+
+---
+
+### Chapter 21: Production — Running It for Real
+
+Chapter 8 admitted Task.all had no timeout and no cancellation; production is where admitted limitations come to collect. The chapter adds a settle-once guard inside `fork`, `Task.timeout` and retry with a pure backoff policy, a `/health` endpoint, request logging through the env logger, and graceful shutdown — SIGTERM drains in-flight requests and finally calls `store.close()`. It closes by delivering the integration test suite the series deferred three times: the real server, real HTTP, fake feeds, including the chapter 16 status-shape bug as a regression test.
+
+**Key concepts:** settle-once, timeout and cancellation as stop-listening, retry policies, health checks, graceful shutdown, integration testing.
+
+---
+
+### Chapter 22: What You've Actually Built
+
+The closing chapter. No new code — a reckoning with what the series has produced. The arc is traced chapter by chapter in a paragraph each: pure functions → composition → absence → failure → async → architecture → testing → applied features → error symmetry → accumulation → sync effects → persistence → dependencies → production. The underlying pattern is named: every type in the series is a container with `map`, `chain`, and an escape hatch. The Fantasy Land specification is introduced as the formal name for what the reader has been building all along, with a mapping from series types to Fantasy Land algebras. The chapter closes with the portability argument — nothing in the functional core is Node-specific — and opens the door to the next book, which begins by building a second shell — a CLI — over this book's unchanged core, then goes formal: Fantasy Land, production libraries, Traversable and Monoid and Bifunctor, property-based testing of algebraic laws.
 
 **Key concepts:** series recap, the container pattern, Fantasy Land specification, algebraic laws, portability of FP patterns, what comes next.
 

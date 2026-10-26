@@ -42,7 +42,10 @@ git checkout main
 | `chapter-16` | Completing Task — `mapError` and Consistent Error Shapes |
 | `chapter-17` | Collecting Failures — The Validation Type |
 | `chapter-18` | Taming Sync Side Effects — The IO Type |
-| `chapter-19` | What You've Actually Built |
+| `chapter-19` | Persistence — The App Remembers |
+| `chapter-20` | Reader — Dependencies as an Argument |
+| `chapter-21` | Production — Running It for Real |
+| `chapter-22` | What You've Actually Built |
 
 ## Running the Project
 
@@ -56,6 +59,16 @@ Then try:
 ```
 GET http://localhost:3000/feed?url=https://feeds.npr.org/1001/rss.xml
 GET http://localhost:3000/feeds?url=https://feeds.npr.org/1001/rss.xml&url=https://www.theverge.com/rss/index.xml
+POST http://localhost:3000/feeds          { "url": "https://feeds.npr.org/1001/rss.xml", "title": "NPR" }
+GET http://localhost:3000/feeds/saved
+GET http://localhost:3000/health
+```
+
+Configuration is read once at startup and validated as a whole — if anything
+is wrong, every problem is reported and the server does not start:
+
+```
+PORT=3000 FEEDS_DB=feeds.db LOG_LEVEL=info FEED_TIMEOUT_MS=10000 FEED_RETRIES=2 node src/server.js
 ```
 
 ## Running the Tests
@@ -74,6 +87,13 @@ src/
   digest.js              — The /digest feature (chapter 14)
   digest.test.js         — Tests for the digest feature
   server.js              — HTTP server (the imperative shell)
+  server.integration.test.js — End-to-end tests against the real server (chapter 21)
+  handlers.test.js       — Handler tests against a fake env (chapter 20)
+  store.js               — SQLite persistence via node:sqlite (chapter 19)
+  store.test.js
+  config.js              — Validated startup configuration (chapter 20)
+  config.test.js
+  logger.js              — Level-filtered logger built on IO (chapter 20)
   index.js               — Scratchpad / examples
   lib/
     fp-utils.js          — Reusable FP utilities (pipe, compose, pluck, etc.)
@@ -88,6 +108,8 @@ src/
     validation.test.js
     io.js                — IO type (lazy sync side effects; chapter 18)
     io.test.js
+    reader.js            — Reader / ReaderTask (dependencies as an argument; chapter 20)
+    reader.test.js
 docs/
   OUTLINE.md             — Full series outline
   chapter-*.md           — Article drafts
@@ -95,4 +117,4 @@ docs/
 
 ## No Framework Dependencies
 
-The only production dependency is `rss-parser` (used in chapter 7 onwards to parse RSS feeds). Everything else — the HTTP server, the test runner, `fetch` — comes built into Node 22.
+The only production dependency is `rss-parser` (used in chapter 7 onwards to parse RSS feeds). Everything else — the HTTP server, the test runner, `fetch`, and, from chapter 19, SQLite via Node's built-in `node:sqlite` — comes built into Node 22.
