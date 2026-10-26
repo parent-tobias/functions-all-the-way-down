@@ -37,8 +37,31 @@ const validateLogLevel = raw => {
     : Failure([`LOG_LEVEL must be one of ${LOG_LEVELS.join(', ')} (got "${raw}")`]);
 };
 
+// Chapter 21: how long a feed fetch may run before the deadline
+// wins, and how many times a failed fetch is retried. Same
+// treatment as everything else here — defaults when absent, a
+// named failure when present and wrong.
+const validateFeedTimeoutMs = raw => {
+  if (raw === undefined) return Success(10000);
+  const ms = Number(raw);
+  return (Number.isInteger(ms) && ms > 0)
+    ? Success(ms)
+    : Failure([`FEED_TIMEOUT_MS must be a positive integer (got "${raw}")`]);
+};
+
+const validateFeedRetries = raw => {
+  if (raw === undefined) return Success(2);
+  const retries = Number(raw);
+  return (Number.isInteger(retries) && retries >= 0 && retries <= 5)
+    ? Success(retries)
+    : Failure([`FEED_RETRIES must be an integer between 0 and 5 (got "${raw}")`]);
+};
+
 export const parseConfig = (env = process.env) =>
-  Validation.of(port => feedsDb => logLevel => ({ port, feedsDb, logLevel }))
+  Validation.of(port => feedsDb => logLevel => feedTimeoutMs => feedRetries =>
+    ({ port, feedsDb, logLevel, feedTimeoutMs, feedRetries }))
     .ap(validatePort(env.PORT))
     .ap(validateFeedsDb(env.FEEDS_DB))
-    .ap(validateLogLevel(env.LOG_LEVEL));
+    .ap(validateLogLevel(env.LOG_LEVEL))
+    .ap(validateFeedTimeoutMs(env.FEED_TIMEOUT_MS))
+    .ap(validateFeedRetries(env.FEED_RETRIES));

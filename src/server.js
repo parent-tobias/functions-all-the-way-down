@@ -11,11 +11,17 @@
 // built once, in main(), and supplied once, at the fork boundary.
 // Handlers can therefore be run against a fake env in tests, with no
 // database, no HTTP and no rewiring of imports.
+//
+// Chapter 21: production. Feed fetches run under a timeout and a
+// retry policy taken from the config; /health reports whether the
+// store can answer; every request is logged through the env's
+// logger; and main() answers SIGTERM/SIGINT by draining in-flight
+// requests and closing the store before it exits.
 
 import http from 'node:http';
 import { pathToFileURL } from 'node:url';
 import { Either, Left } from './lib/either.js';
-import { Task }   from './lib/task.js';
+import { Task, isTimeoutError }   from './lib/task.js';
 import { ReaderTask } from './lib/reader.js';
 import { processFeed, processFeeds, processFeedForDigest } from './fetch-feed.js';
 import { createStore } from './store.js';
@@ -30,6 +36,25 @@ const sendJSON  = (res, status, data)    => {
 const sendError = (res, status, message) =>
   sendJSON(res, status, { error: message });
 
+// Chapter 21: the network is the one part of a feed request that can
+// hang or flap, so it is the part that gets a deadline and retries —
+// each attempt races the configured timeout, and a rejection earns
+// another attempt after the backoff schedule's wait. Validation
+// errors happen before this wrapper is ever reached, so a 400 is
+// never retried. A timeout arrives already shaped ({ status: 504 }),
+// and the handlers' mapError passes shaped errors — timeouts
+// included, recognised by isTimeoutError or by their status —
+// through untouched, exactly as chapter sixteen taught.
+const RETRY_BASE_DELAY_MS = 250;
+
+const withResilience = (task, config) =>
+  task
+    .timeout(config.feedTimeoutMs)
+    .retry(config.feedRetries, RETRY_BASE_DELAY_MS);
+
+const isShapedError = err =>
+  !!err && (isTimeoutError(err) || typeof err.status === 'number');
+
 // Route: GET /feed?url=<feed_url>[&category=...][&search=...]
 export const handleFeedRequest = req => ReaderTask(env => {
   const { searchParams } = new URL(req.url, `http://localhost:${env.config.port}`);
@@ -39,8 +64,8 @@ export const handleFeedRequest = req => ReaderTask(env => {
 
   return Either.fromNullable(url, {status:400, message: 'Missing url parameter'})
     .fold(Task.rejected, Task.of)
-    .chain(url => processFeed(url, { category, search }))
-    .mapError(err => err && typeof err.status === 'number' ? err : ({ status: 500, message: `Error processing feed: ${err.message ?? err}` }))
+    .chain(url => withResilience(processFeed(url, { category, search }), env.config))
+    .mapError(err => isShapedError(err) ? err : ({ status: 500, message: `Error processing feed: ${err.message ?? err}` }))
     .map(items => ({ status: 200, body: items }));
 });
 
@@ -52,8 +77,8 @@ export const handleMultipleFeedsRequest = req => ReaderTask(env => {
   return Either.of(urls)
     .filter(urls => urls.length > 0, {status:400, message: 'Missing url parameter'})
     .fold(Task.rejected, Task.of)
-    .chain(urls => processFeeds(...urls.map(url => url.trim())))
-    .mapError(err => err && typeof err.status === 'number' ? err : ({ status: 500, message: `Error processing feeds: ${err.message ?? err}` }))
+    .chain(urls => withResilience(processFeeds(...urls.map(url => url.trim())), env.config))
+    .mapError(err => isShapedError(err) ? err : ({ status: 500, message: `Error processing feeds: ${err.message ?? err}` }))
     .map(items => ({ status: 200, body: items }));
 });
 
@@ -64,8 +89,8 @@ export const handleDigestRequest = req => ReaderTask(env => {
 
   return Either.fromNullable(url, {status:400, message: 'Missing url parameter'})
     .fold(Task.rejected, Task.of)
-    .chain(processFeedForDigest)
-    .mapError(err => err && typeof err.status === 'number' ? err : ({ status: 500, message: `Error processing feed for digest: ${err.message ?? err}` }))
+    .chain(url => withResilience(processFeedForDigest(url), env.config))
+    .mapError(err => isShapedError(err) ? err : ({ status: 500, message: `Error processing feed for digest: ${err.message ?? err}` }))
     .map(digest => ({ status: 200, body: digest }));
 });
 
@@ -110,6 +135,16 @@ export const handleSavedFeedsRequest = () => ReaderTask(env =>
     .map(feeds => ({ status: 200, body: feeds }))
 );
 
+// Route: GET /health — is the app actually able to do its job?
+// Chapter 21. The check is a real query against the store, not a
+// hardcoded "fine": if the store can count its feeds, the app is
+// up; if it can't, the honest answer is a shaped 503.
+export const handleHealthRequest = () => ReaderTask(env =>
+  env.store.ping()
+    .map(count => ({ status: 200, body: { status: 'ok', feeds: count } }))
+    .mapError(err => ({ status: 503, message: `Store unavailable: ${err.message ?? err}` }))
+);
+
 const route = req => {
   const { pathname } = new URL(req.url, 'http://localhost');
 
@@ -118,6 +153,7 @@ const route = req => {
   if (req.method === 'GET' && pathname === '/digest')      return handleDigestRequest(req);
   if (req.method === 'POST' && pathname === '/feeds')      return handleSaveFeedRequest(req);
   if (req.method === 'GET' && pathname === '/feeds/saved') return handleSavedFeedsRequest();
+  if (req.method === 'GET' && pathname === '/health')      return handleHealthRequest();
   return null;
 };
 
@@ -141,7 +177,22 @@ export const main = () => {
         logger: makeLogger(config.logLevel),
       };
 
+      // Chapter 21: how many requests are between arrival and
+      // response right now. The graceful shutdown below drains
+      // against this count; the request log reports against it too.
+      let inFlight = 0;
+
       const server = http.createServer((req, res) => {
+        const startedAt = Date.now();
+        inFlight += 1;
+        res.on('finish', () => {
+          inFlight -= 1;
+          const { pathname } = new URL(req.url, 'http://localhost');
+          env.logger
+            .info(`${req.method} ${pathname} ${res.statusCode} ${Date.now() - startedAt}ms`)
+            .run();
+        });
+
         const handler = route(req);
         if (!handler) return sendError(res, 404, 'Not found');
 
@@ -156,6 +207,44 @@ export const main = () => {
           .chain(() => env.logger.info(`Try: http://localhost:${config.port}/feed?url=https://feeds.npr.org/1001/rss.xml`))
           .run();
       });
+
+      // Graceful shutdown — the lifecycle's other boundary. On
+      // SIGTERM/SIGINT: stop accepting new connections, let the
+      // requests already in flight finish (up to a short drain
+      // cap — a stuck request must not hold the process hostage),
+      // then close the store — chapter nineteen's close(), finally
+      // called — log the sequence, and exit 0.
+      const DRAIN_CAP_MS = 5000;
+      let shuttingDown = false;
+
+      const shutdown = signal => {
+        if (shuttingDown) return;
+        shuttingDown = true;
+        env.logger.info(`${signal} received — draining ${inFlight} in-flight request(s)`).run();
+
+        let finished = false;
+        const finish = () => {
+          if (finished) return;
+          finished = true;
+          clearTimeout(deadline);
+          env.store.close();
+          env.logger.info('Store closed — shutdown complete').run();
+          process.exit(0);
+        };
+        const deadline = setTimeout(() => {
+          env.logger.warn(`Drain cap reached with ${inFlight} request(s) still in flight — closing anyway`).run();
+          finish();
+        }, DRAIN_CAP_MS);
+        if (deadline.unref) deadline.unref();
+
+        server.close(() => {
+          env.logger.info('All requests drained').run();
+          finish();
+        });
+      };
+
+      process.on('SIGTERM', () => shutdown('SIGTERM'));
+      process.on('SIGINT',  () => shutdown('SIGINT'));
     }
   );
 };

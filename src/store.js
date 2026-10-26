@@ -77,7 +77,20 @@ export const createStore = (dbPath) => {
     }
   });
 
+  // Chapter 21: the health check's probe. A trivial *real* query —
+  // if the database can't answer this, it can't answer anything —
+  // resolving to the number of feeds the store remembers.
+  const countAll = db.prepare('SELECT COUNT(*) AS count FROM feeds');
+
+  const ping = () => Task((reject, resolve) => {
+    try {
+      resolve(countAll.get().count);
+    } catch (err) {
+      reject(err);
+    }
+  });
+
   const close = () => db.close();
 
-  return { saveFeed, loadFeeds, close };
+  return { saveFeed, loadFeeds, ping, close };
 };

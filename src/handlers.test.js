@@ -13,6 +13,7 @@ import {
   handleFeedRequest,
   handleSaveFeedRequest,
   handleSavedFeedsRequest,
+  handleHealthRequest,
 } from './server.js';
 
 const runTask = task => new Promise((resolve, reject) =>
@@ -45,12 +46,13 @@ const makeFakeStore = (saved = []) => {
       return Task.of(record);
     },
     loadFeeds: () => Task.of([...feeds]),
+    ping: () => Task.of(feeds.length),
     close: () => {},
   };
 };
 
 const fakeEnv = (store = makeFakeStore()) => ({
-  config: { port: 3000, feedsDb: ':memory:', logLevel: 'error' },
+  config: { port: 3000, feedsDb: ':memory:', logLevel: 'error', feedTimeoutMs: 1000, feedRetries: 0 },
   store,
   logger: silentLogger,
 });
@@ -118,5 +120,29 @@ describe('handleFeedRequest against a fake env', () => {
       handleFeedRequest(req).runReader(fakeEnv())
     );
     assert.deepEqual(err, { status: 400, message: 'Missing url parameter' });
+  });
+});
+
+describe('handleHealthRequest against a fake env (chapter 21)', () => {
+  test('resolves 200 ok with the store’s feed count', async () => {
+    const saved = [
+      { id: 1, url: 'https://example.com/a.xml', title: 'A', createdAt: '2026-01-01 00:00:00' },
+      { id: 2, url: 'https://example.com/b.xml', title: 'B', createdAt: '2026-01-01 00:00:00' },
+    ];
+    const result = await runTask(
+      handleHealthRequest().runReader(fakeEnv(makeFakeStore(saved)))
+    );
+    assert.deepEqual(result, { status: 200, body: { status: 'ok', feeds: 2 } });
+  });
+
+  test('a store that cannot answer rejects with the shaped 503', async () => {
+    const brokenStore = {
+      ...makeFakeStore(),
+      ping: () => Task.rejected(new Error('disk gone')),
+    };
+    const err = await runTaskErr(
+      handleHealthRequest().runReader(fakeEnv(brokenStore))
+    );
+    assert.deepEqual(err, { status: 503, message: 'Store unavailable: disk gone' });
   });
 });
