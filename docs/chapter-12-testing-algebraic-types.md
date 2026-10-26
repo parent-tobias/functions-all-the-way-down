@@ -257,14 +257,14 @@ You'll see grouped output from each `describe` block. A well-organized test suit
   ...
 ```
 
-Nine files, zero mocks, zero dependencies beyond the standard library.
+Eight files, zero mocks, zero dependencies beyond the standard library.
 
 ## A Few Things to Sit With
 
-Before the final chapter:
+Before the next chapter:
 
 - We've tested all the way through from a test-after perspective — implement, then test. Would anything be different if you'd written the tests first? For which functions would that be natural? For which would it feel forced?
-- `Task` isn't covered in the test suite yet. How would you test `Task.of(5).map(x => x * 2)`? Task's fork is a callback — how do you assert on a value that arrives asynchronously in a `node:test` test?
+- `Task` has its own suite in the codebase (`task.test.js`) — but every test there forks a Task that settles immediately, in memory. What would testing `processFeed` need that those tests don't have? Where does unit testing a Task end and integration testing begin?
 - The tests document the current behaviour. If you change `normalizeItem` to use a different field name for the error key — say `message` instead of `error` — several tests would fail. Is that good or bad? Is test failure on interface changes the right behaviour?
 
-Chapter thirteen is the last in the series. It steps back from the mechanics and examines when TDD makes sense in a functional codebase, what the discipline actually looks like in practice, and what "good test coverage" means for code structured the way ours is.
+Chapter thirteen closes the testing part of the series. It steps back from the mechanics and examines when TDD makes sense in a functional codebase, what the discipline actually looks like in practice, and what "good test coverage" means for code structured the way ours is.

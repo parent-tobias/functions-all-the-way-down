@@ -37,6 +37,12 @@ git checkout main
 | `chapter-11` | Testing Pure Functions — The Payoff |
 | `chapter-12` | Testing Algebraic Types |
 | `chapter-13` | TDD with Functional Programming |
+| `chapter-14` | Putting It Together — Building the /digest Feature |
+| `chapter-15` | Composing Types — The Either → Task Bridge |
+| `chapter-16` | Completing Task — `mapError` and Consistent Error Shapes |
+| `chapter-17` | Collecting Failures — The Validation Type |
+| `chapter-18` | Taming Sync Side Effects — The IO Type |
+| `chapter-19` | What You've Actually Built |
 
 ## Running the Project
 
@@ -65,6 +71,8 @@ src/
   transforms.js          — Pure data transformations (the functional core)
   transforms.test.js     — Tests for the core transforms
   fetch-feed.js          — Task-based feed fetching and processing
+  digest.js              — The /digest feature (chapter 14)
+  digest.test.js         — Tests for the digest feature
   server.js              — HTTP server (the imperative shell)
   index.js               — Scratchpad / examples
   lib/
@@ -75,6 +83,11 @@ src/
     either.js            — Either monad (errors as values)
     either.test.js
     task.js              — Task monad (lazy async computation)
+    task.test.js
+    validation.js        — Validation type (accumulating errors; chapter 17)
+    validation.test.js
+    io.js                — IO type (lazy sync side effects; chapter 18)
+    io.test.js
 docs/
   OUTLINE.md             — Full series outline
   chapter-*.md           — Article drafts

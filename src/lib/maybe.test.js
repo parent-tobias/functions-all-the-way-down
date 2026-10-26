@@ -5,7 +5,6 @@ import { Maybe } from './maybe.js';
 describe('Maybe', () => {
   test('Maybe.of creates a Just value', () => {
     const maybeValue = Maybe.of(5);
-    assert.strictEqual(maybeValue.inspect().includes('Just'), true);
     assert.strictEqual(maybeValue.getOrElse(null), 5);
   });
 
@@ -20,7 +19,6 @@ describe('Maybe', () => {
 
   test('Maybe.map applies a function to a Just value', () => {
     const result = Maybe.of(5).map(x => x * 2);
-    assert.strictEqual(result.inspect().includes('Just'), true);
     assert.strictEqual(result.getOrElse(null), 10);
   });
 

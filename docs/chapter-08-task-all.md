@@ -110,11 +110,15 @@ The two feeds are fetched concurrently, their items merged and sorted by date, a
 
 ## The Honest Limitations
 
-`Task.all` as implemented is functional but not production-hardened. Two gaps worth knowing about:
+`Task.all` as implemented is functional but not production-hardened. A few gaps worth knowing about:
 
 **No cancellation.** If you fork five Tasks and one fails immediately, the other four continue running in the background. The outer Task's `reject` has already been called, so those results will be discarded — but the network requests still complete. There's no way to tell them to stop. This is a genuine limitation of Tasks built without cancellation semantics. Libraries like [Fluture](https://github.com/fluture-js/Fluture) solve this properly.
 
 **No timeout.** A Task that neither resolves nor rejects will hang forever. Nothing in the current implementation sets a deadline. In production, you'd want a `withTimeout` wrapper — a Task that races the original against a rejection that fires after N milliseconds.
+
+**No settle-once guard.** Each Task in the list gets the same reject handler, and nothing marks the race as finished. If two feeds fail, the handler fires *twice* — and in the server, that means the error response gets written twice. A production implementation guards the handlers so that whichever Task settles the race first wins, and everything after that is ignored.
+
+**An empty list never settles.** `Task.all([])` returns a Task that neither resolves nor rejects: the counter starts at the length of the list, the completion check only runs inside a resolve handler, and with no Tasks there is nothing to run it. Fork it and you wait forever. It should resolve immediately with an empty array — as written, it doesn't.
 
 These aren't reasons to avoid Task in your own code. They're reasons to understand what you're working with and reach for a production library when the requirements demand it.
 

@@ -62,6 +62,7 @@ const authorToString = author =>
 const getAuthorName = obj =>
   Maybe.of(firstOf('author', 'dc:creator')(obj))
     .map(authorToString)
+    .filter(name => name !== undefined)
     .getOrElse('Unknown Author');
 
 export const normalizeItem = item =>

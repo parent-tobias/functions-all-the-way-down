@@ -1,4 +1,4 @@
-# Functional Programming in Node.js: A Practical Guide
+# Functions All the Way Down: Building an API using Functional Programming in Node.js
 ## Series Outline
 
 This series builds a real RSS feed aggregator API from scratch using functional
@@ -82,7 +82,7 @@ We build Maybe from scratch — a `Just` that holds a value and a `Nothing` that
 holds nothing, both with the same interface. Code that calls `.map()` on a Maybe
 doesn't know or care whether it has a value; if it's a Nothing, the transformation
 is silently skipped and a Nothing comes out the other end. We apply this to author
-name normalization in the feed processor, where the author field might be absent,
+name normalisation in the feed processor, where the author field might be absent,
 a string, or an object with a `name` property.
 
 **Key concepts:** Maybe/Just/Nothing, null safety, map over containers, `getOrElse`.
@@ -113,7 +113,7 @@ successful value; a `Left` holds an error. Like Maybe, both have the same interf
 so transformations chain through `Right` values while `Left` values propagate
 unchanged — the first failure wins.
 
-We build Either from scratch and use it to validate and normalize feed items in
+We build Either from scratch and use it to validate and normalise feed items in
 `normalizeItem`. Each validation step either passes the item forward (Right) or
 captures the specific error (Left: "Title was null", "Link was null"). We introduce
 `fold` as the escape hatch — the only way to get a plain value out of an Either,
@@ -138,7 +138,7 @@ thing when you're ready.
 
 We build Task from scratch and discover that `map` and `chain` work exactly the
 same way as they do for Maybe and Either. A Task that fetches a URL, parses RSS,
-and normalizes items is just three operations composed together. `fork` is our
+and normalises items is just three operations composed together. `fork` is our
 escape hatch — the async equivalent of `fold`. We discuss the imperative shell
 pattern: the functional core never calls `fork`; only the outermost boundary of
 the application does.

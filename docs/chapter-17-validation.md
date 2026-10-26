@@ -69,6 +69,8 @@ Failure(['e1']).ap(Failure(['e2']))         // → Failure(['e1', 'e2'])
 
 The last case is the one that matters: two independent failures, combined into one. Neither short-circuits. Both are collected.
 
+One honest detail about direction: in this implementation, the container holding the *function* receives the `ap` call, and the container holding the *value* is the argument. Fantasy Land orders it the other way — there, `ap` is called on the value's container and passed the function's container. The behaviour is the same either way; only the reading direction differs. We've kept function-first because it makes the curried-constructor pattern below read left to right — but if you compare this code against the specification, expect the mirror image.
+
 ## Validators
 
 With Either, `normalizeItem` validates fields inside a `chain`. With Validation, you write small, focused validator functions:

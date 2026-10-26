@@ -134,19 +134,17 @@ const parseFeed = raw => Task((reject, resolve) =>
 Then `processFeed` chains them together with pure transforms in the middle:
 
 ```js
-export const processFeed = (url, { category, search } = {}) =>
+export const processFeed = (url) =>
   fetchFeed(url)
     .chain(parseFeed)
     .map(feed => feed.items)
     .map(items => items.map(normalizeItem))
     .map(items => items.filter(item => item.valid))
     .map(items => items.map(item => item.data))
-    .map(when(category, filterByCategory(category)))
-    .map(when(search, filterBySearch(search)))
     .map(sortByDateDesc);
 ```
 
-This entire function returns a Task. Nothing runs when you call `processFeed(url)`. You get back a description of "fetch this URL, parse it as RSS, normalize the items, filter by category and search if specified, sort by date." The operations are assembled in order, but idle.
+This entire function returns a Task. Nothing runs when you call `processFeed(url)`. You get back a description of "fetch this URL, parse it as RSS, normalize the items, keep the valid ones, sort by date." The operations are assembled in order, but idle.
 
 When you call `.fork()` on the result — which happens in `server.js` — that's when everything executes.
 

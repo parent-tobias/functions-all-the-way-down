@@ -167,6 +167,6 @@ Before we get to chapter three:
 
 - We now have several `items => result` functions that could be chained together — filter, then sort, then extract. Right now, chaining them means nesting calls: `getTitles(sortByDateDesc(filterByTitle('node')(items)))`. That's right to left, which reads backwards from how it executes. What would a cleaner way to express that look like?
 - `pipe` is the answer, and it's built with `reduce`. Can you see the connection? `reduce` threads a value through a list of operations — which is exactly what we want to do with our functions.
-- `filterBySearch` in the current codebase checks both the title *and* the summary. That requires combining two predicates with OR logic. How might you express that combination as a reusable utility, rather than hardcoding it into the filter function?
+- Imagine a search filter that checks both the title *and* the summary — an item passes if `filterByTitle` *or* `filterBySummary` matches it. That requires combining two predicates with OR logic. How might you express that combination as a reusable utility, rather than writing a new filter that hardcodes both checks?
 
 Chapter three builds `pipe` from scratch, shows its connection to `reduce`, and refactors the transforms pipeline into something that reads like a description of what it does.

@@ -13,7 +13,7 @@ Before we close this series and open the next one, it's worth standing back and 
 
 **Chapters 1–3** established the ground rules: pure functions, currying, composition. A pure function is a promise — same input, same output, no surprises. Currying turns configuration into composition. `pipe` makes the flow of data visible. These three constraints produce code that can be reasoned about in isolation, and that reason alone justifies them.
 
-**Chapter 4–6** introduced the first three algebraic types. `Maybe` handles absence without null checks scattered everywhere. `Either` handles failure with a reason. `map` and `chain` are the same operation at two levels of complexity — `map` for plain functions, `chain` for functions that return a container. The `fold` at the end is the contract: to leave a container, you must handle every case.
+**Chapter 4–6** introduced the first two algebraic types. `Maybe` handles absence without null checks scattered everywhere. `Either` handles failure with a reason. `map` and `chain` are the same operation at two levels of complexity — `map` for plain functions, `chain` for functions that return a container. The `fold` at the end is the contract: to leave a container, you must handle every case.
 
 **Chapters 7–8** took the same principles async. `Task` is a lazy promise — nothing runs until you say so. `Task.all` runs effects concurrently and combines the results. `fork` is the async escape hatch, and it lives only in the imperative shell.
 
@@ -53,12 +53,12 @@ Here's the mapping:
 | Anything with `map` | Functor |
 | Anything with `ap` | Apply / Applicative |
 | Anything with `chain` | Chain / Monad |
-| `IO.of`, `Task.of`, `Maybe.of` | Applicative `of` |
+| `Maybe.of`, `Either.of`, `Task.of`, `Validation.of`, `IO.of` | Applicative `of` |
 | `Validation` with `ap` | Applicative (non-monadic) |
 
 The laws you followed intuitively — `map(x => x)` should return an equivalent container, `chain` should flatten but not otherwise change the value — are the *algebraic laws* that give these structures their names. A Functor is not a thing that has `map`; it's a thing that has `map` *and obeys the functor laws*. You've been writing lawful code all along.
 
-Fantasy Land also defines structures you haven't encountered yet. `Semigroup` is anything you can `concat` together. `Monoid` is a Semigroup with an empty value — think arrays, strings, or `Sum(0)`. `Traversable` lets you sequence effects over a collection — mapping an array of URLs to Tasks and running them all. `Bifunctor` is a type with two type parameters that can be mapped on either side (like Either's `mapLeft`). Each of these is a solved problem with a name and a set of laws.
+Fantasy Land also defines structures you haven't encountered yet. `Semigroup` is anything you can `concat` together. `Monoid` is a Semigroup with an empty value — think arrays, strings, or `Sum(0)`. `Traversable` lets you sequence effects over a collection — mapping an array of URLs to Tasks and running them all. `Bifunctor` is a type with two type parameters that can be mapped on either side (an Either extended with a `mapLeft` for its error side, alongside the `map` it already has, would be one). Each of these is a solved problem with a name and a set of laws.
 
 ## These Patterns Are Portable
 

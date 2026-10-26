@@ -103,12 +103,13 @@ const authorToString = author =>
 const getAuthorName = obj =>
   Maybe.of(firstOf('author', 'dc:creator')(obj))
     .map(authorToString)
+    .filter(name => name !== undefined)
     .getOrElse('Unknown Author');
 ```
 
-`firstOf('author', 'dc:creator')(obj)` tries the `author` field first, then `dc:creator`, returning whichever isn't null. `Maybe.of` wraps the result: if both were missing, it's a `Nothing`; otherwise it's a `Just`. `.map(authorToString)` converts the value to a string only if there's something there. `.getOrElse('Unknown Author')` extracts the result, using the fallback if there's nothing.
+`firstOf('author', 'dc:creator')(obj)` tries the `author` field first, then `dc:creator`, returning whichever isn't null. `Maybe.of` wraps the result: if both were missing, it's a `Nothing`; otherwise it's a `Just`. `.map(authorToString)` converts the value to a string only if there's something there. One case still slips through: an author object with no `name` property converts to `undefined` — a `Just` holding nothing worth having. The `.filter(...)` step (which gets its own section below) drops exactly that case, turning it into a `Nothing`. `.getOrElse('Unknown Author')` extracts the result, using the fallback if there's nothing.
 
-Three lines. No conditionals. And the logic of "try these fields, convert to string, default to unknown" is readable in sequence.
+Four lines. No conditionals. And the logic of "try these fields, convert to string, default to unknown" is readable in sequence.
 
 ## `Maybe.of` as the Smart Constructor
 

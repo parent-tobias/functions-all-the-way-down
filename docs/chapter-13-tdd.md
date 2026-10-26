@@ -80,14 +80,14 @@ That's not exhaustive coverage — `Task` isn't tested, `sortByDateDesc` only ha
 Here's a concrete scenario. Suppose you want to refactor `normalizeItem` to extract the validation logic into smaller functions:
 
 ```js
-const validateItem  = item => Either.fromNullable(item, 'Item was null');
-const validateTitle = i    => Either.fromNullable(i.title, 'Title was null').map(title => ({ ...i, title }));
-const validateLink  = i    => Either.fromNullable(i.link, 'Link was null').map(link => ({ ...i, link }));
+const checkItem  = item => Either.fromNullable(item, 'Item was null');
+const checkTitle = i    => Either.fromNullable(i.title, 'Title was null').map(title => ({ ...i, title }));
+const checkLink  = i    => Either.fromNullable(i.link, 'Link was null').map(link => ({ ...i, link }));
 
 export const normalizeItem = item =>
-  validateItem(item)
-    .chain(validateTitle)
-    .chain(validateLink)
+  checkItem(item)
+    .chain(checkTitle)
+    .chain(checkLink)
     .map(toNormalizedShape)
     .fold(
       err  => ({ valid: false, error: err }),
@@ -97,7 +97,7 @@ export const normalizeItem = item =>
 
 The tests don't care about this refactoring. They call `normalizeItem` with specific inputs and assert on the results. They test the contract, not the implementation. You refactor, run `npm test`, and if the tests pass, the contract is preserved.
 
-This is the reason for testing at the right level of abstraction. Tests for `validateItem` directly would break when you rename it. Tests for `normalizeItem`'s behaviour survive refactoring as long as the behaviour doesn't change.
+This is the reason for testing at the right level of abstraction. Tests for `checkItem` directly would break when you rename it. Tests for `normalizeItem`'s behaviour survive refactoring as long as the behaviour doesn't change.
 
 ## Functional Programming as Test-Friendly Design
 
