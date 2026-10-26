@@ -96,3 +96,33 @@ export const validateItem = item =>
       errors => ({ valid:false, errors }),
       item => ({ valid: true, data: item })
     );
+
+// Validators for the POST /feeds request body. A request body is
+// untrusted input, and its two fields are independent — a bad title
+// shouldn't hide a missing URL — so Validation accumulates both
+// failures at once, exactly as validateItem does for feed items.
+export const validateFeedUrl = url => {
+  if (!url) return Failure(['Missing url']);
+  try {
+    const { protocol } = new URL(url);
+    return (protocol === 'http:' || protocol === 'https:')
+      ? Success(url)
+      : Failure(['Invalid url']);
+  } catch {
+    return Failure(['Invalid url']);
+  }
+};
+
+export const validateFeedTitle = title =>
+  (title === undefined || title === null || typeof title === 'string')
+    ? Success(title ?? null)
+    : Failure(['Invalid title']);
+
+export const validateFeedInput = input =>
+  Validation.of(url => title => ({ url, title }))
+    .ap(validateFeedUrl(input?.url))
+    .ap(validateFeedTitle(input?.title))
+    .fold(
+      errors => ({ valid: false, errors }),
+      feed   => ({ valid: true,  data: feed })
+    );
