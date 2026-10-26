@@ -162,7 +162,7 @@ The underlying principle: **`fold` produces whatever its functions return.** If 
 
 ## A Few Things to Sit With
 
-The series is now complete as a functional reference application, but the design space it opened is worth sitting with:
+The application is now complete in its essentials as a functional reference, but the design space it opened is worth sitting with:
 
 - `mapError` was discussed but not implemented. It's a natural addition to Task. What would the full Task implementation look like with `mapError`, and what other patterns would it unlock?
 - The error objects in this project carry either strings (`'Missing url parameter'`) or Error instances. A consistent shape — say, `{ status, message }` from the point of origin — would let the fork handler be fully generic. What would it take to enforce that shape throughout the pipeline?

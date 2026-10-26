@@ -7,7 +7,7 @@
 
 Test-driven development and functional programming are often discussed together, and for good reason. But the pairing deserves more nuance than "always write tests first." TDD isn't a law; it's a technique. Understanding *when* it helps and when it doesn't is more useful than applying it uniformly.
 
-This final chapter is about discipline: what good testing looks like in an FP codebase, when writing tests first is genuinely valuable, and what the ongoing practice of maintaining a functional test suite actually involves.
+This final chapter of the testing part is about discipline: what good testing looks like in an FP codebase, when writing tests first is genuinely valuable, and what the ongoing practice of maintaining a functional test suite actually involves.
 
 ## The Classic Loop: Red, Green, Refactor
 
@@ -38,7 +38,7 @@ This test fails immediately — `normalizeItem` doesn't exist yet. Now you imple
 
 **Building utilities and algebraic types.** If you're implementing `firstOf` or `when` or a new monad method, TDD is excellent. The expected behaviour is well-defined before you start: `firstOf('a', 'b')({a: null, b: 'value'})` should return `'value'`. Write the test, watch it fail, implement the function, watch it pass. The cycle is tight and satisfying.
 
-**Adding edge cases to existing functions.** You discover that `firstOf` doesn't handle `0` correctly (it would if `v` were used instead of `v != null`). Write the test first:
+**Adding edge cases to existing functions.** You realise `firstOf` has an edge case worth pinning down: `0`. Because `0` is falsy, an implementation that tested `v` for truthiness instead of `v != null` would skip it and return the fallback; the `v != null` check is precisely what makes `0` count as a present value. Write the test that documents the distinction:
 
 ```js
 test('firstOf returns 0 if that is the first non-null value', () => {
@@ -47,7 +47,7 @@ test('firstOf returns 0 if that is the first non-null value', () => {
 });
 ```
 
-This test fails. Now fix the implementation. Now the test passes and you have documentation of the edge case that will prevent regressions.
+This test passes against `v != null` — and it would fail if anyone ever "simplified" that check to a truthiness test. That's the point of writing it: you now have documentation of the edge case that will prevent regressions.
 
 **Implementing the monad laws.** Writing the left-identity and right-identity tests before implementing `chain` forces you to understand what correct behaviour looks like before writing code that might subtly violate the laws.
 
@@ -107,20 +107,12 @@ If a function is pure, you can test it with plain values. If data is immutable, 
 
 You didn't structure the code this way *for testing*. You structured it this way because pure functions are predictable, because immutability prevents accidental mutation, because the functional core / imperative shell pattern makes responsibilities clear. The testability is a consequence of the design, not the goal.
 
-That's the most important thing to take from this series: the techniques aren't testing techniques. They're design techniques. The tests are what you get when the design is right.
+That's the most important thing to take from this part of the series: the techniques aren't testing techniques. They're design techniques. The tests are what you get when the design is right.
 
-## Where to Go Next
+## What Comes Next
 
-The appendix covers the libraries worth exploring after this series:
+That closes the testing part — but not the series. So far we've built a toolkit and a tested functional core, and mostly exercised them piece by piece. If one thing from these testing chapters sticks, make it this: pure functions are not a constraint you impose on yourself as discipline. They're the natural result of writing functions that do exactly one thing — transform their input into their output — and nothing else. Everything else follows.
 
-- **Ramda** — compare the utilities we built by hand against a production FP library; most of what's in `fp-utils.js` exists in Ramda with more edge cases handled
-- **Fluture** — a mature Task implementation with proper cancellation semantics; solves the hanging-task problem we acknowledged in chapter eight
-- **Fantasy Land** — the specification that formalizes the algebraic structures we built; if you want to understand why `map` and `chain` work the way they do across all containers, this is the source
-- **fp-ts / Effect** — full FP in TypeScript, where the type system enforces the laws at compile time
-- **Property-based testing** — instead of testing specific inputs, generate hundreds of inputs and verify that properties hold across all of them; the monad laws are natural candidates
+Part Six is where the patterns stop being exercises and start being put to work. Chapter fourteen builds a complete new feature — the `/digest` endpoint, a summary of a feed: item count, date range, top categories, recent headlines — and builds it the way these chapters have argued for: designed first, the pure core written test-first and fully exercised before any async work is touched. Then the chapters after it wire that feature into the server, and find out what the patterns do when synchronous validation has to hand off to asynchronous work.
 
-If one thing from this series sticks, make it this: pure functions are not a constraint you impose on yourself as discipline. They're the natural result of writing functions that do exactly one thing — transform their input into their output — and nothing else. Everything else follows.
-
----
-
-*This concludes "Functions All the Way Down: Building an API using Functional Programming." The full project code is available at [github.com/parent-tobias/functions-all-the-way-down](https://github.com/parent-tobias/functions-all-the-way-down), with git tags at each chapter milestone.*
+That's the real test of everything so far — not whether the tests pass, but whether a new feature feels like building, or like plumbing.

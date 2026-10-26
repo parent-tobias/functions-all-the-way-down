@@ -61,10 +61,10 @@ The shape: `{ status, message }`. A status code and a human-readable message, de
 Either.fromNullable(url, { status: 400, message: 'Missing url parameter' })
 
 // Fetch/parse failure — normalised by mapError before reaching fork
-.mapError(err => ({ status: 500, message: `Error processing feed: ${err.message}` }))
+.mapError(err => err && typeof err.status === 'number' ? err : ({ status: 500, message: `Error processing feed: ${err.message ?? err}` }))
 ```
 
-The Either validation error already carries the right shape. The Task rejection arrives as an `Error` object — `mapError` converts it to the same shape before `fork` sees it. Both error paths are now uniform, and `fork` can destructure without any conditionals:
+There is one honest detail in that line, and the whole fix depends on it. The validation error doesn't bypass `mapError`: the bridge has already turned the Left into a rejected Task *before* `mapError` in the chain, so the `{ status: 400, … }` object flows through `mapError` on its way to `fork`. A normaliser that rewrote *every* rejection as a 500 would quietly undo the validation at the last step — the missing URL would be reported as a server failure, and the distinction this chapter set out to recover would be lost again. So the normaliser is selective. If the error already carries a numeric `status`, it is already shaped, and `mapError` passes it through unchanged. Anything else — the plain `Error` objects that a failed fetch or parse rejects with — is unshaped, and `mapError` normalises it to the 500 shape. `mapError` normalises *unshaped* errors; it doesn't overwrite decisions the shell has already made. Both error paths now arrive at `fork` uniform, and `fork` can destructure without any conditionals:
 
 ```js
 .fork(
@@ -109,7 +109,7 @@ Three handlers, all following the same pattern:
 Either.fromNullable(url, { status: 400, message: 'Missing url parameter' })
   .fold(Task.rejected, Task.of)
   .chain(url => processFeed(url, { category, search }))
-  .mapError(err => ({ status: 500, message: `Error processing feed: ${err.message}` }))
+  .mapError(err => err && typeof err.status === 'number' ? err : ({ status: 500, message: `Error processing feed: ${err.message ?? err}` }))
   .fork(
     ({ status, message }) => sendError(res, status, message),
     items => sendJSON(res, 200, items)
@@ -120,7 +120,7 @@ Either.of(urls)
   .filter(urls => urls.length > 0, { status: 400, message: 'Missing url parameter' })
   .fold(Task.rejected, Task.of)
   .chain(urls => processFeeds(...urls.map(url => url.trim())))
-  .mapError(err => ({ status: 500, message: `Error processing feeds: ${err.message}` }))
+  .mapError(err => err && typeof err.status === 'number' ? err : ({ status: 500, message: `Error processing feeds: ${err.message ?? err}` }))
   .fork(
     ({ status, message }) => sendError(res, status, message),
     items => sendJSON(res, 200, items)
@@ -130,7 +130,7 @@ Either.of(urls)
 Either.fromNullable(url, { status: 400, message: 'Missing url parameter' })
   .fold(Task.rejected, Task.of)
   .chain(processFeedForDigest)
-  .mapError(err => ({ status: 500, message: `Error processing feed for digest: ${err.message}` }))
+  .mapError(err => err && typeof err.status === 'number' ? err : ({ status: 500, message: `Error processing feed for digest: ${err.message ?? err}` }))
   .fork(
     ({ status, message }) => sendError(res, status, message),
     digest => sendJSON(res, 200, digest)

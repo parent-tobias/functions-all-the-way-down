@@ -9,7 +9,7 @@ You've been there. You write a function, it works perfectly in isolation, you te
 
 This isn't a skill issue. It's a design issue. And it's exactly the kind of problem that functional programming disciplines help solve.
 
-Over this series, we're going to build a real project together - a Node.js RSS/news feed aggregator API. No frameworks, no unnecessary dependencies. Just ES modules, Node 22's built-in `fetch`, and a growing set of techniques that will make the codebase easier to reason about, test, and extend. You can follow along at [repo link]. This first chapter is about establishing the rules of the game, starting with the concept that underlies most of what we'll build: **pure functions**.
+Over this series, we're going to build a real project together - a Node.js RSS/news feed aggregator API. No frameworks, no unnecessary dependencies. Just ES modules, Node 22's built-in `fetch`, and a growing set of techniques that will make the codebase easier to reason about, test, and extend. You can follow along at [github.com/parent-tobias/functions-all-the-way-down](https://github.com/parent-tobias/functions-all-the-way-down). This first chapter is about establishing the rules of the game, starting with the concept that underlies most of what we'll build: **pure functions**.
 
 ## What Makes a Function "Pure"?
 
@@ -160,4 +160,4 @@ Before we move on to chapter two, consider a few questions:
 - `filterByTitle` uses the `config => data => result` currying pattern. Which of the other transforms in this file might benefit from that same treatment? What kind of configuration would make sense?
 - We've separated pure logic from impure I/O conceptually. But how exactly should the shell layer call into these functions once we have real data coming back from a `fetch`? What does that boundary actually look like in code?
 
-Those are the threads we'll pull on in chapter two, where we get into function composition and start hooking the pure core up to real network data.
+The second of those threads is the one we'll pull on first. In chapter two, we take currying further — that `config => data => result` shape we used for `filterByTitle` — and look at what partial application lets us build with it: functions configured once, then passed around, stored, and applied wherever they're needed.

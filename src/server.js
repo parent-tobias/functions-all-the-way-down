@@ -30,7 +30,7 @@ const handleFeedRequest = (req, res) => {
   Either.fromNullable(url, {status:400, message: 'Missing url parameter'})
     .fold(Task.rejected, Task.of)
     .chain(url => processFeed(url, { category, search }))
-    .mapError(err => ({ status: 500, message: `Error processing feed: ${err.message}` }))
+    .mapError(err => err && typeof err.status === 'number' ? err : ({ status: 500, message: `Error processing feed: ${err.message ?? err}` }))
     .fork(
       err   => sendError(res, err.status, err.message),
       items => sendJSON(res, 200, items)
@@ -46,7 +46,7 @@ const handleMultipleFeedsRequest = (req, res) => {
     .filter(urls => urls.length > 0, {status:400, message: 'Missing url parameter'})
     .fold(Task.rejected, Task.of)
     .chain(urls => processFeeds(...urls.map(url => url.trim())))
-    .mapError(err => ({ status: 500, message: `Error processing feeds: ${err.message}` }))
+    .mapError(err => err && typeof err.status === 'number' ? err : ({ status: 500, message: `Error processing feeds: ${err.message ?? err}` }))
     .fork(
       err   => sendError(res, err.status, err.message),
       items => sendJSON(res, 200, items)
@@ -61,7 +61,7 @@ const handleDigestRequest = (req, res) => {
   Either.fromNullable(url, {status:400, message: 'Missing url parameter'})
     .fold(Task.rejected, Task.of)
     .chain(processFeedForDigest)
-    .mapError(err => ({ status: 500, message: `Error processing feed for digest: ${err.message}` }))
+    .mapError(err => err && typeof err.status === 'number' ? err : ({ status: 500, message: `Error processing feed for digest: ${err.message ?? err}` }))
     .fork(
       err    => sendError(res, err.status, err.message),
       digest => sendJSON(res, 200, digest)

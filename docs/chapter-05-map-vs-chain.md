@@ -27,14 +27,14 @@ This is the contract: if you pass `map` a function that returns a plain value, y
 What happens if the function you pass to `map` also returns a Maybe?
 
 ```js
-const safeDivide = (n) => (d) =>
+const safeDivide = (d) => (n) =>
   d === 0 ? Maybe.nothing() : Maybe.of(n / d);
 
-Maybe.of(10).map(safeDivide(10));
+Maybe.of(10).map(safeDivide(2));
 // Just(Just(5))  ← nested — this is not what you want
 ```
 
-`safeDivide(10)` returns a function that, given a denominator, returns a Maybe. When you map that over `Just(10)`, `map` does what it always does: unwraps the outer `Just`, applies the function (which produces `Just(5)`), and wraps the result. The result is `Just(Just(5))`.
+`safeDivide` is curried divisor-first: `safeDivide(2)` returns a function that, given a numerator, returns a Maybe — `Just` of the numerator divided by 2, or `Nothing` if the divisor we already supplied was 0. When you map that over `Just(10)`, `map` does what it always does: unwraps the outer `Just`, applies the function to the contained value (which produces `Just(5)`), and wraps the result. The result is `Just(Just(5))`.
 
 You now have a Maybe nested inside a Maybe. Calling `.getOrElse(0)` on it gives you `Just(5)`, not `5`. You'd have to call `.getOrElse(0).getOrElse(0)` — and that tells you the nesting is wrong, not that you should call it twice.
 
@@ -43,7 +43,7 @@ You now have a Maybe nested inside a Maybe. Calling `.getOrElse(0)` on it gives 
 `chain` — also called `flatMap` or `bind` in other languages — is like `map` but flattens the result. Instead of wrapping the function's return value in a new container, it expects the function to return a container, and returns *that* container directly.
 
 ```js
-Maybe.of(10).chain(safeDivide(10));
+Maybe.of(10).chain(safeDivide(2));
 // Just(5)
 
 Maybe.of(10).chain(safeDivide(0));
